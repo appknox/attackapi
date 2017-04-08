@@ -99,9 +99,19 @@ def detect_vulnerabilities(request):
     return vulnerabilities
 
 
+def process_request(request):
+    try:
+        vulnerabilities = detect_vulnerabilities(request)
+        print('Attacked: {}://{}{}'.format(r.scheme, r.host, r.path)[:100])
+        print(vulnerabilities)
+    except Exception as e:
+        print(e)
+        # print(type(data),len(data))
+
+
 def attack():
-    print('Attacking tracked APIs')
     ps = rc.pubsub()
+
     ps.psubscribe(CHANNEL)
     while True:
         for message in ps.listen():
@@ -109,12 +119,7 @@ def attack():
             if data == 1:
                 continue
             request = pickle.loads(data)
-            try:
-                vulnerabilities = detect_vulnerabilities(request)
-                print(vulnerabilities)
-            except Exception as e:
-                print(e)
-                # print(type(data),len(data))
+            process_request(request)
 
 
 def monitor():
