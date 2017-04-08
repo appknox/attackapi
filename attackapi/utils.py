@@ -1,9 +1,18 @@
 import fcntl
-import shlex
 import socket
 import struct
-import subprocess
-import sys
+
+
+IGNORED_URL_TYPES = {
+    'img', 'js', 'css', 'png', 'jpg', 'svg', 'gif', 'ico', 'otf', 'woff',
+    'woff2',
+}
+
+IGNORED_HOSTS = {
+    'facebook.com', 'insights.hotjar.com', 'youtube.com',
+    'gstatic.com', 'decide.mixpanel.com',
+    'android.clients.google.com',
+}
 
 
 def get_ip(iface='wlo1'):
@@ -25,19 +34,11 @@ def run_shell_command(cmd):
     pass
 
 
-ignored_url_types = {
-    'img', 'js', 'css', 'png', 'jpg', 'svg', 'gif',
-}
-ignored_hosts = {
-    'facebook.com', 'insights.hotjar.com', 'youtube.com',
-}
-
-
 def can_ignore(request):
     path_without_query = request.path.split('?')[0]
     url_type = path_without_query.split('.')[-1].lower()
     host = request.host.strip('.www')
-    is_ignored = url_type in ignored_url_types or host in ignored_hosts
+    is_ignored = url_type in IGNORED_URL_TYPES or host in IGNORED_HOSTS
     return is_ignored
 
 
