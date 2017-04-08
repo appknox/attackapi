@@ -10,7 +10,7 @@ long_description = open('README.rst').read()
 
 setup(
     name='attackapi',
-    version='0.1.0',
+    version='0.1.1',
     url='https://github.com/appknox/attackapi',
     license='BSD',
     author='Appknox',
