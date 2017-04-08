@@ -4,16 +4,15 @@ import pickle
 import shlex
 import subprocess
 import sys
-import threading
 import tempfile
-import yaml
+import threading
+import traceback
 from os.path import dirname, join
 
 import jinja2
 import redis
 
-
-from .utils import get_ip, Colors, color_print
+from .utils import Colors, color_print, get_ip
 
 
 rc = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -59,17 +58,9 @@ def syntribos_scan(url, template, out_file):
 
 
 def detect_vulnerability(failure):
-    for name, defect_types in MAPPINGS:
+    for name, defect_types in MAPPINGS.items():
         if failure['defect_type'] in defect_types:
-            description = '{}: {}\n'.format(
-                failure['url'], failure['description'].replace('\n', '. ')
-            )
-        instances = failure.get('instances', [])
-        for instance in instances:
-            instance.pop('strings', None)
-            instance.pop('signals', None)
-            description = '\n'.join([description, yaml.dump(instance)])
-        return description
+            return ','.join((failure['url'], failure['description']))
 
 
 def analyze_results(results):
@@ -87,14 +78,18 @@ def analyze_results(results):
 def detect_vulnerabilities(request):
     r = request
     url = '{}://{}:{}'.format(r['scheme'], r['host'], r['port'])
-    text = 'ATTACKED: {}/{}'.format(url, r['path'])
+    text = 'ATTACKED: {}{}'.format(url, r['path'])
     color_print(text, Colors.FAIL)
     _, template_file = tempfile.mkstemp(dir=tmp_dir, suffix='.template')
     with open(template_file, 'w') as fh:
         fh.write(TEMPLATE.render(**request))
     _, out_file = tempfile.mkstemp(dir=tmp_dir, suffix='.out')
     syntribos_scan(url, template_file, out_file)
-    results = json.load(open(out_file))
+    try:
+        results = json.load(open(out_file))
+    except:
+        print(url, template_file, out_file)
+        return []
     vulnerabilities = analyze_results(results)
     return vulnerabilities
 
@@ -102,16 +97,23 @@ def detect_vulnerabilities(request):
 def process_request(request):
     try:
         vulnerabilities = detect_vulnerabilities(request)
-        print('Attacked: {}://{}{}'.format(r.scheme, r.host, r.path)[:100])
-        print(vulnerabilities)
+        return vulnerabilities
     except Exception as e:
-        print(e)
-        # print(type(data),len(data))
+        traceback.print_exc()
+        return None
+
+
+results_file = 'attackapi.csv'
+
+
+def store_vulnerabilites(vulnerabilities):
+    line = ','.join(vulnerabilities) + '\n'
+    with open(results_file, 'a') as file:
+        file.write(line)
 
 
 def attack():
     ps = rc.pubsub()
-
     ps.psubscribe(CHANNEL)
     while True:
         for message in ps.listen():
@@ -119,16 +121,21 @@ def attack():
             if data == 1:
                 continue
             request = pickle.loads(data)
-            process_request(request)
+            vulnerabilities = process_request(request)
+            if vulnerabilities:
+                store_vulnerabilites(vulnerabilities)
 
 
 def monitor():
     ip_address = get_ip()
     port = 8080
-    print()
-    print('Visit mitm.it and install certificate'.format(ip_address, port))
-    print('Starting proxy on {}:{}'.format(ip_address, port))
-    print()
+    banner = """
+
+ATTACK API:
+    Starting proxy on {}:{}.
+    From your mobile or computer, visit mitm.it and install certificate.
+"""
+    print(banner.format(ip_address, port))
     thread = threading.Thread(target=attack)
     thread.start()
     script = join(dirname(__file__), 'store_requests.py')
@@ -136,5 +143,5 @@ def monitor():
     cmd = shlex.split(cmd)
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     for line in iter(process.stdout.readline, b''):
-        if b'Tracked: ' in line:
+        if b'TRACKED: ' in line or b'IGNORED: ' in line:
             sys.stdout.write(line.decode())
