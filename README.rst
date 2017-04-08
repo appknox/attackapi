@@ -9,6 +9,7 @@ It uses mitmproxy to setup proxy and syntribos to detect vulnerabilities in API.
 Installation
 ================
 
+.. code-block:: shell
 
     $ pip install attackapi
 
@@ -20,9 +21,13 @@ Usage
 
 To see help
 
+.. code-block:: shell
+
     $ attackapi --help
 
 
 To start a proxy and attack API
+
+.. code-block:: shell
 
     $ attackapi run
