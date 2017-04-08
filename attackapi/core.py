@@ -13,7 +13,7 @@ import jinja2
 import redis
 
 
-from .utils import get_ip
+from .utils import get_ip, Colors, color_print
 
 
 rc = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -75,6 +75,8 @@ def detect_vulnerability(failure):
 def analyze_results(results):
     vulnerabilities = []
     failures = results['failures']
+    if not failures:
+        return
     for failure in failures:
         vulnerability = detect_vulnerability(failure)
         if vulnerability:
@@ -85,7 +87,8 @@ def analyze_results(results):
 def detect_vulnerabilities(request):
     r = request
     url = '{}://{}:{}'.format(r['scheme'], r['host'], r['port'])
-    print('ATTACKING: {}/{}'.format(url, r['path']))
+    text = 'ATTACKED: {}/{}'.format(url, r['path'])
+    color_print(text, Colors.FAIL)
     _, template_file = tempfile.mkstemp(dir=tmp_dir, suffix='.template')
     with open(template_file, 'w') as fh:
         fh.write(TEMPLATE.render(**request))

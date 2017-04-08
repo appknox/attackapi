@@ -23,3 +23,33 @@ def get_ip(iface='wlo1'):
 
 def run_shell_command(cmd):
     pass
+
+
+ignored_url_types = {
+    'img', 'js', 'css', 'png', 'jpg', 'svg', 'gif',
+}
+ignored_hosts = {
+    'facebook.com', 'insights.hotjar.com', 'youtube.com',
+}
+
+
+def can_ignore(request):
+    url_type = request.path.split('.')[-1]
+    host = request.host.strip('.www')
+    is_ignored = url_type in ignored_url_types or host in ignored_hosts
+    return is_ignored
+
+
+class Colors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
+def color_print(text, color):
+    print(color + text + Colors.ENDC)
