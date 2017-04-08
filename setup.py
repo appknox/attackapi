@@ -3,17 +3,20 @@ attack api
 """
 from setuptools import find_packages, setup
 
-dependencies = ['click']
+dependencies = ['click', 'redis']
+
+description = 'attack api is a cli tool to find security vulnerabilities in an API.'
+long_description = open('README.rst').read()
 
 setup(
     name='attackapi',
     version='0.1.0',
-    url='https://github.com/chillaranand/attackapi',
+    url='https://github.com/appknox/attackapi',
     license='BSD',
-    author='chillar anand',
-    author_email='vincent@3rdcloud.com',
-    description='attack api',
-    long_description=__doc__,
+    author='Appknox',
+    author_email='engineering@appknox.com',
+    description=description,
+    long_description=long_description,
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     zip_safe=False,
