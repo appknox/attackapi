@@ -34,7 +34,8 @@ ignored_hosts = {
 
 
 def can_ignore(request):
-    url_type = request.path.split('.')[-1]
+    path_without_query = request.path.split('?')[0]
+    url_type = path_without_query.split('.')[-1].lower()
     host = request.host.strip('.www')
     is_ignored = url_type in ignored_url_types or host in ignored_hosts
     return is_ignored
